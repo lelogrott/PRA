@@ -4,6 +4,9 @@
 #include <string.h>
 #include <sys/time.h>
 
+#define TAM_MEM 5
+#define TAM_ARQ 15
+
 
 typedef struct {
 long int id, temp, hora, minuto, segundo, dia, mes, ano;
@@ -13,6 +16,7 @@ long int id, temp, hora, minuto, segundo, dia, mes, ano;
 void iniciaContagem();
 void terminaContagem();
 void geraArquivoIni(FILE *fp);
+int reservatorioVazio(FILE *reservatorio);
 
 struct timeval tv_ini, tv_fim;
 unsigned long time_diff, sec_diff, usec_diff, msec_diff;
@@ -21,7 +25,7 @@ int rc;
 int main()
 {
     long int pos_stream = 0;
-    int i,j, nSaida=1, primeiroElemento=1,ret=1;
+    int i,j, nSaida=1, primeiroElemento=1,ret=1,prev_saida=1;
     int elementos_reservatorio = 0;
     char saida[15];
     registro *memoria;
@@ -32,7 +36,7 @@ int main()
     FILE *out;
     fpos_t ultimo;
 
-    memoria = (registro*)malloc(sizeof(registro)*10);
+    memoria = (registro*)malloc(sizeof(registro)*TAM_MEM);
     srand(time(NULL));
 
     fp = fopen("teste.txt", "wb");
@@ -51,27 +55,38 @@ int main()
     }
     printf("\n\n\n");
     rewind(fp);
-    fread(memoria, sizeof(registro), 10, fp);
+    fread(memoria, sizeof(registro), TAM_MEM, fp);
     
     int menor = 51;
     int pos_menor;
     registro k;
+    sprintf(saida,"saida_%d.txt", nSaida);
+
+    out = fopen(saida, "ab");
     while(!feof(fp)){
         reservatorio = fopen("reservatorio.txt", "wb");
         fclose(reservatorio);
         reservatorio = fopen("reservatorio.txt", "ab");
-        while(elementos_reservatorio < 10 && ((ret = fread(&k,sizeof(registro), 1, fp))==1)){
-            for(i=0;i<10;i++)
+        while(elementos_reservatorio < TAM_MEM && (ret==1)){
+            
+            ret = fread(&k,sizeof(registro), 1, fp);
+            for(i=0;i<5;i++)
             {
                 if(memoria[i].temp < menor)
                 {
                     menor = memoria[i].temp;
-                    pos_menor = i;
+                    pos_menor = i;                    
                 }
             }
-            sprintf(saida,"saida_%d", nSaida);
+            printf("MENOR: %d - POSICAO: %d\n\n", memoria[pos_menor].temp, pos_menor);
 
-            out = fopen(saida, "ab");
+            sprintf(saida,"saida_%d.txt", nSaida);
+            if(nSaida != prev_saida)
+            {
+                out = fopen(saida, "ab");
+                prev_saida++;
+            }
+            fseek(out, 0, SEEK_END); 
             //fgetpos(out, &ultimo);
             if(!primeiroElemento)
             {
@@ -80,24 +95,41 @@ int main()
                 if(last.temp <= memoria[pos_menor].temp)
                 {
                     //printf("@@@%d > %d\n", memoria[pos_menor].temp, last.temp);
-                    fwrite(&memoria[pos_menor],sizeof(registro), 1, out);
+                    fseek(out, 0, SEEK_END);
+                    if(memoria[pos_menor].temp != 59) 
+                        fwrite(&memoria[pos_menor],sizeof(registro), 1, out);
+                    printf("Entrou MENOR: %d\n", memoria[pos_menor].temp);
                     //printf("%d   ", memoria[pos_menor].temp);
                     last.temp = memoria[pos_menor].temp;
-                    memcpy(&memoria[pos_menor], &k, sizeof(registro));
+                    memoria[pos_menor].temp = 59;
+                    if (ret == 1)
+                    {
+                        memcpy(&memoria[pos_menor], &k, sizeof(registro));
+                    }
                     //fread(&memoria[pos_menor],sizeof(registro), 1, fp);        
                     //printf("   %d", memoria[pos_menor].temp);
                 }
                 else
                 {
-                    //printf("@@@%d < %d\n", memoria[pos_menor].temp, last.temp);
+                    printf("@@@ENTROU RES\n\n");
                     fwrite(&memoria[pos_menor],sizeof(registro), 1, reservatorio);
-                    memcpy(&memoria[pos_menor], &k, sizeof(registro));
+                    memoria[pos_menor].temp = 59;
+                    if(ret ==1 && (elementos_reservatorio < TAM_MEM-1))
+                    {
+                        memcpy(&memoria[pos_menor], &k, sizeof(registro));    
+                    }
+                    else
+                    {
+                        fwrite(&k,sizeof(registro), 1, fp);
+                    }                
                     //fread(&memoria[pos_menor],sizeof(registro), 1, fp);   
                     elementos_reservatorio++;     
                 }            
             }
             else
             {
+                printf("FIRST:%d\n", memoria[pos_menor].temp);
+                fseek(out, 0, SEEK_END); 
                 fwrite(&memoria[pos_menor],sizeof(registro), 1, out);
                 last = memoria[pos_menor];                
                 //fread(&memoria[pos_menor],sizeof(registro), 1, fp); 
@@ -109,15 +141,16 @@ int main()
             //printf("elementos no reservatorio: %d\n", elementos_reservatorio);        
         }
         printf("\n\n\n");
-        for(i=0;i<10;i++){
+        /*for(i=0;i<5;i++){
             printf("%d\n", memoria[i].temp);
-        }
-        fseek (reservatorio, 0, SEEK_END); 
-        pos_stream = ftell(reservatorio);
-        //printf(">>>>>>>>> pos_stream = %ld\n", pos_stream);
+        }*/
+        fseek(out, 0, SEEK_END); 
+        //pos_stream = ftell(reservatorio);
+        pos_stream = sizeof(registro)*5;
+        printf(">>>>>>>>> pos_stream = %ld\n", pos_stream);
         for(j=0;j<(pos_stream/32);j++)
         {
-            for(i=0;i<10;i++)
+            for(i=0;i<5;i++)
             {
                 if(memoria[i].temp < menor)
                 {
@@ -125,15 +158,85 @@ int main()
                     pos_menor = i;
                 }
             }
-            fwrite(&memoria[pos_menor],sizeof(registro), 1, out);
+            fseek(out, 0, SEEK_END); 
+            if(memoria[pos_menor].temp != 59)
+            {
+                fwrite(&memoria[pos_menor],sizeof(registro), 1, out);
+            }
+            printf("SOBRAS: %d\n\n", memoria[pos_menor].temp);
+            printf("J == %d", j);
             memoria[pos_menor].temp = 59;
             menor = 51;
         }
-        fread(memoria,sizeof(registro), (pos_stream/32), reservatorio);
+        fseek(reservatorio, 0, SEEK_END); 
+        pos_stream = ftell(reservatorio);
+        printf(">>>>>>>>> pos_stream = %ld\n", pos_stream);
+        rewind(reservatorio);
+        i=0;
+        printf("COPIANDO: \n");
+        while(i<(pos_stream/32))
+        {
+            fread(&memoria[i],sizeof(registro), 1, reservatorio);
+            printf("%d\n",memoria[i].temp);
+            i++;
+
+        }
+        for(i=0;i<TAM_MEM;i++)
+            printf("@@@SOBRAS: %d\n\n", memoria[i].temp);
+        //fread(memoria,sizeof(registro), pos_stream/32, reservatorio);
+           
         nSaida++;
         elementos_reservatorio =0;
-        fclose(reservatorio);
+        
     }
+
+    fclose(reservatorio);
+    if(!reservatorioVazio(reservatorio))
+    {
+        printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>lol\n");
+        fclose(out);
+        sprintf(saida,"saida_%d.txt", nSaida);
+        out = fopen(saida, "wb");
+
+        fseek(reservatorio, 0, SEEK_END); 
+        pos_stream = ftell(reservatorio);
+        printf(">>>>>>>>> pos_stream = %ld\n", pos_stream);
+        //fread(memoria,sizeof(registro), pos_stream/32, reservatorio);
+        i=0;
+        rewind(reservatorio);
+        while(!feof(reservatorio))
+        {
+            fread(&memoria[i],sizeof(registro), 1, reservatorio);
+            i++;
+        }
+        for(i=0;i<TAM_MEM;i++)
+            printf("@@@SOBRAS: %d\n\n", memoria[i].temp);
+
+        pos_stream = sizeof(registro)*TAM_MEM;
+        //printf(">>>>>>>>> pos_stream = %ld\n", pos_stream);
+        for(j=0;j<(pos_stream/32);j++)
+        {
+            for(i=0;i<TAM_MEM;i++)
+            {
+                if(memoria[i].temp < menor)
+                {
+                    menor = memoria[i].temp;
+                    pos_menor = i;
+                }
+            }
+            fseek(out, 0, SEEK_END); 
+            if(memoria[pos_menor].temp != 59)
+            {
+                fwrite(&memoria[pos_menor],sizeof(registro), 1, out);
+            }
+            printf("SOBRAS: %d\n\n", memoria[pos_menor].temp);
+            printf("J == %d", j);
+            memoria[pos_menor].temp = 59;
+            menor = 51;
+        }
+        
+    }
+
     fclose(fp);
     fclose(out);
     fclose(reservatorio);
@@ -164,9 +267,21 @@ int main()
     return 0;
 }
 
+int reservatorioVazio(FILE *reservatorio)
+{ 
+    int pos_stream;
+    reservatorio = fopen("reservatorio.txt","rb");
+    fseek(reservatorio, 0, SEEK_END); 
+    if((pos_stream = ftell(reservatorio))==0)
+    {printf("POS_STREAM: %d\n\n", pos_stream);
+        return 1;
+    }printf("POS_STREAM: %d\n\n", pos_stream);
+    return 0;
+}
+
 void geraArquivoIni(FILE *fp){
     int i = 0;
-    for(i=0;i<50;i++)
+    for(i=0;i<TAM_ARQ;i++)
         {
             registro j;
             j.id = i+1;

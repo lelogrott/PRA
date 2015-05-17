@@ -20,17 +20,16 @@ int main(){
         printf("ID = %d -> %d C %d h %d min %d seg -  %d / %d / %d\n", k.id,k.temp, k.hora, k.minuto, k.segundo, k.dia, k.mes, k.ano);
 	}
 	fclose(reader);
-	for(i=1;i<=3;i++)
+	for(i=1;i<=8;i++)
     {
         printf("%d : \n", i);
-        sprintf(saida,"saida_%d", i);
+        sprintf(saida,"saida_%d.txt", i);
         reader = fopen(saida, "rb");
         while((ret= fread(&k,sizeof(registro), 1, reader))==1)
         {   cont++;     
             printf("ID = %d -> %d C %d h %d min %d seg -  %d / %d / %d\n", k.id,k.temp, k.hora, k.minuto, k.segundo, k.dia, k.mes, k.ano);
         }
         fclose(reader);
-        printf("%d", cont);
     }
 	return 0;
 }
