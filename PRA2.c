@@ -1,8 +1,12 @@
+#include <iostream>
+#include <string>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <sys/time.h>
+
+//using namespace std;
 
 typedef struct {
 long int id, temp, hora, minuto, segundo, dia, mes, ano;
@@ -19,11 +23,19 @@ int rc;
 
 int main()
 {
-    registro memoria[11];
-    srand(time(NULL));
     int i;
+    int elementos_reservatorio = 0;
+    std::string saida("saida_");
+    registro *memoria;
+    
+    printf("string = %s\n", saida);return;
+    
     FILE *fp;
     FILE *reservatorio;
+    //FILE *saida;
+
+    memoria = (registro*)malloc(sizeof(registro)*10);
+    srand(time(NULL));
 
     fp = fopen("teste.txt", "wb");
     reservatorio = fopen("reservatorio.txt", "wb");
@@ -41,7 +53,8 @@ int main()
         fread(&k,sizeof(registro), 1, fp);
         printf("%d ºC %d h %d min %d seg -  %d / %d / %d\n", k.temp, k.hora, k.minuto, k.segundo, k.dia, k.mes, k.ano);
     }
-    
+    printf("\n\n\n");
+    rewind(fp);
     fread(memoria, sizeof(registro), 10, fp);
     
     int menor = 51;
@@ -52,13 +65,14 @@ int main()
             if(memoria[i].temp < menor)
             {
                 menor = memoria[i].temp;
-                pos_menor = i;    
+                pos_menor = i;
             }
         }
         fwrite(&memoria[pos_menor], sizeof(registro), 1, reservatorio);
         elementos_reservatorio++;
+        fread(&memoria[pos_menor],sizeof(registro), 1, fp);
     }
-    
+
     return 0;
 }
 
