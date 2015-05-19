@@ -120,7 +120,8 @@ int main()
                         memcpy(&memoria[pos_menor], &k, sizeof(registro));    
                     }
                     else
-                    {                       
+                    {
+                       
                         pos_fp = ftell(fp);                       
                         printf("POS_FP ANTES: %ld\n",pos_fp);
                         fseek(fp, -64, SEEK_CUR);

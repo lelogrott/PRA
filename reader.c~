@@ -20,7 +20,7 @@ int main(){
         printf("ID = %d -> %d C %d h %d min %d seg -  %d / %d / %d\n", k.id,k.temp, k.hora, k.minuto, k.segundo, k.dia, k.mes, k.ano);
 	}
 	fclose(reader);
-	for(i=1;i<=10;i++)
+	for(i=1;i<=2;i++)
     {
         printf("%d : \n", i);
         sprintf(saida,"saida_%d.txt", i);
