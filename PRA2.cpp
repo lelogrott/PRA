@@ -207,6 +207,7 @@ int main()
         //fread(memoria,sizeof(registro), pos_stream/32, reservatorio);
 
         //fclose(reservatorio);
+        flag = 1;
         nSaida++;
         elementos_reservatorio =0;
         primeiroElemento=1;        
