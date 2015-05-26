@@ -23,7 +23,7 @@ int main(){
 	for(i=1;i<=10;i++)
     {
         printf("%d : \n", i);
-        sprintf(saida,"saida_%d.txt", i);
+        sprintf(saida,"saida%d.txt", i);
         reader = fopen(saida, "rb");
         while((ret= fread(&k,sizeof(registro), 1, reader))==1)
         {   cont++;     
