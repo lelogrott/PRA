@@ -4,7 +4,7 @@
 #include <string.h>
 #include <sys/time.h>
 
-#define TAM_MEM 100000
+#define TAM_MEM 1000
 #define TAM_ARQ 1000000
 
 
