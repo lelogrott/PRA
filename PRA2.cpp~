@@ -278,7 +278,7 @@ int main()
             remove(saida);
             nSaida++;
         }
-        if(saidasGeradas %2!=0){
+        if(saidasGeradas & 1==0){
             sprintf(saida,"saida_%d_arq_%d.txt", controle+1, saidasGeradas);
             char saida1[40];
             sprintf(saida1,"saida_%d_arq_1.txt", controle+2);
