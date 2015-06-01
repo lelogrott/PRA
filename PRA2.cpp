@@ -5,8 +5,8 @@
 #include <sys/time.h>
 #include <math.h>
 
-#define TAM_MEM 100
-#define TAM_ARQ 1000
+#define TAM_MEM 100000
+#define TAM_ARQ 1000000
 
 
 typedef struct {
@@ -31,7 +31,8 @@ int main()
     char saida[40];
     registro *memoria;
     registro last;
-
+    last.temp = 59;
+    
     FILE *fp;
     FILE *reservatorio;
     FILE *out;
@@ -72,7 +73,12 @@ int main()
             }
             for(i=0;i<TAM_MEM;i++)
             {
-                if(memoria[i].temp < menor)
+                if(memoria[i].temp == last.temp){
+                    menor = memoria[i].temp;
+                    pos_menor = i;
+                    break;  
+                }
+                else if(memoria[i].temp < menor)
                 {
                     menor = memoria[i].temp;
                     pos_menor = i;                    
@@ -130,9 +136,8 @@ int main()
             menor = 51;      
         }
         fseek(out, 0, SEEK_END); 
-        pos_stream = sizeof(registro)*TAM_MEM;
-        for(j=0;j<TAM_MEM;j++)
-        {
+        //for(j=0;j<TAM_MEM;j++)
+        //{
             for(i=0;i<TAM_MEM;i++)
             {
                 if(memoria[i].temp < menor)
@@ -140,7 +145,7 @@ int main()
                     menor = memoria[i].temp;
                     pos_menor = i;
                 }
-            }
+            //}
             fseek(out, 0, SEEK_END); 
             if(memoria[pos_menor].temp != 59)
             {
@@ -155,7 +160,7 @@ int main()
         pos_stream = ftell(reservatorio);
         rewind(reservatorio);
         i=0;
-        while(i<(pos_stream/64))
+        while(i<TAM_MEM)
         {
             fread(&memoria[i],sizeof(registro), 1, reservatorio);
             i++;
@@ -183,7 +188,7 @@ int main()
             i++;
         }
 
-        pos_stream = sizeof(registro)*TAM_MEM;
+        //pos_stream = sizeof(registro)*TAM_MEM;
         
         for(i=0;i<TAM_MEM;i++)
         {
@@ -217,7 +222,7 @@ int main()
     /*FIM SELEÇÃO NATURAL*/
     
     /*INICIO INTERCALAÇÃO*/printf("COMEÇOU A TRETA\n");
-    int saidasGeradas = nSaida, cont = 1, rodadas = 0, controle = 0;
+    int saidasGeradas = nSaida, cont = 0, rodadas = 0, controle = 0;
     int duration = (int) nSaida/2;
     nSaida = 1;
     i=0;
@@ -228,16 +233,24 @@ int main()
     for(i=1; i<=100; i++){
         int n = pow(2,i);
         if(saidasGeradas <= n){
-            rodadas = n;
-            printf("%d",rodadas);
+            rodadas = i;
+            printf("%d\n\n\n",rodadas);
             break;
         }
     }
     i=0;
     int duration2 = duration;
     while(controle < rodadas){
+        if(saidasGeradas%2!=0){
+            sprintf(saida,"saida_%d_arq_%d.txt", controle, saidasGeradas);
+            char saida1[40];
+            sprintf(saida1,"saida_%d_arq_1.txt", controle+1);
+            rename(saida, saida1);
+            nSaida =1;
+        }else{
+            nSaida = 1;
+        }
         while(duration--){
-            
             sprintf(saida,"saida_%d_arq_%d.txt", controle, nSaida);
             fp1 = fopen(saida,"rb");
             
@@ -277,21 +290,14 @@ int main()
             sprintf(saida,"saida_%d_arq_%d.txt", controle, ++nSaida);
             remove(saida);
             nSaida++;
+            cont++;
         }
-        if(saidasGeradas %2!=0){
-            sprintf(saida,"saida_%d_arq_%d.txt", controle+1, saidasGeradas);
-            char saida1[40];
-            sprintf(saida1,"saida_%d_arq_1.txt", controle+2);
-            rename(saida, saida1);
-            nSaida = 2;
-        }else{
-            nSaida = 1;
-        }
-        duration = duration2/2;
+        saidasGeradas = cont;
+        duration = (int) duration2/2;
         duration2 = duration;
-        cont++;
         controle++;
         i=0;
+        cont=0;
     }
     return 0;
 }
